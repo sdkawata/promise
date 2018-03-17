@@ -31,6 +31,48 @@ MyPromise.prototype.__registerHandler = function() {
     this.__handleThen();
   }, 0);
 }
+//[[Promise]](promise, x)
+MyPromise.resolvePromise = function(promise, x) {
+  if (promise === x) {
+    promise.__reject(new TypeError('trying to resolve promise with itself'));
+    return;
+  }
+  if (typeof x !== 'object' && typeof x !== 'function') {
+    promise.__resolve(x);
+    return;
+  }
+  let then = x.then;
+  if (typeof then !== 'function') {
+    promise.__resolve(x);
+    return;
+  }
+  var functionCalled = false;
+  try {
+    then.call(
+      x,
+      (y) => {
+        // resolvePromise
+        if (functionCalled) {
+          return;
+        }
+        functionCalled = true;
+        MyPromise.resolvePromise(promise, y);
+      },
+      (r) => {
+        // rejectPromise
+        if (functionCalled) {
+          return;
+        }
+        functionCalled = true;
+        promise.__reject(r);
+      }
+    )
+  } catch(e) {
+    if (!functionCalled) {
+      promise.__reject(e);
+    }
+  }
+}
 MyPromise.prototype.__handleThen = function() {
   const currentQueue = this.__thenQueue;
   this.__thenQueue = [];
@@ -40,7 +82,7 @@ MyPromise.prototype.__handleThen = function() {
       if (typeof thenItem.onFullfilled === 'function') {
         try {
           var x = thenItem.onFullfilled(this.__value);
-          thenItem.promise.__resolve(x);
+          MyPromise.resolvePromise(thenItem.promise, x);
         } catch(e) {
           thenItem.promise.__reject(e);
         }
@@ -50,8 +92,8 @@ MyPromise.prototype.__handleThen = function() {
     } else if (this.__state === PROMISE_REJECTED) {
       if (typeof thenItem.onRejected === 'function') {
         try {
-          thenItem.onRejected(this.__reason);
-          thenItem.promise.__resolve(x);
+          var x = thenItem.onRejected(this.__reason);
+          MyPromise.resolvePromise(thenItem.promise, x);
         } catch(e) {
           thenItem.promise.__reject(e);
         }
