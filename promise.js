@@ -41,7 +41,12 @@ MyPromise.resolvePromise = function(promise, x) {
     promise.__resolve(x);
     return;
   }
-  let then = x.then;
+  let then; 
+  try {
+    then = x.then;
+  } catch(e) {
+    promise.__reject(e);
+  }
   if (typeof then !== 'function') {
     promise.__resolve(x);
     return;
