@@ -23,7 +23,7 @@ MyPromise.prototype.then = function then(onFullfilled, onRejected) {
   return promise2;
 }
 MyPromise.prototype.__registerHandler = function() {
-  if (this.__handlerRegistered) {
+  if (this.__handlerRegistered || this.__thenQueue.length === 0) {
     return;
   }
   this.__handlerRegistered = true;
@@ -32,7 +32,10 @@ MyPromise.prototype.__registerHandler = function() {
   }, 0);
 }
 MyPromise.prototype.__handleThen = function() {
-  this.__thenQueue.forEach((thenItem) => {
+  const currentQueue = this.__thenQueue;
+  this.__thenQueue = [];
+  this.__handlerRegistered = false;
+  currentQueue.forEach((thenItem) => {
     if (this.__state === PROMISE_RESOLVED) {
       if (typeof thenItem.onFullfilled === 'function') {
         try {
@@ -57,8 +60,6 @@ MyPromise.prototype.__handleThen = function() {
       }
     }
   })
-  this.__thenQueue = []
-  this.__handlerRegistered = false;
 }
 MyPromise.prototype.__resolve = function(value) {
   if (this.__state !== PROMISE_PENDING) {
