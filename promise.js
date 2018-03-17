@@ -81,7 +81,7 @@ MyPromise.prototype.__handleThen = function() {
     if (this.__state === PROMISE_RESOLVED) {
       if (typeof thenItem.onFullfilled === 'function') {
         try {
-          var x = thenItem.onFullfilled(this.__value);
+          var x = thenItem.onFullfilled.call(undefined, this.__value);
           MyPromise.resolvePromise(thenItem.promise, x);
         } catch(e) {
           thenItem.promise.__reject(e);
@@ -92,7 +92,7 @@ MyPromise.prototype.__handleThen = function() {
     } else if (this.__state === PROMISE_REJECTED) {
       if (typeof thenItem.onRejected === 'function') {
         try {
-          var x = thenItem.onRejected(this.__reason);
+          var x = thenItem.onRejected.call(undefined, this.__reason);
           MyPromise.resolvePromise(thenItem.promise, x);
         } catch(e) {
           thenItem.promise.__reject(e);
