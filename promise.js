@@ -37,7 +37,7 @@ MyPromise.resolvePromise = function(promise, x) {
     promise.__reject(new TypeError('trying to resolve promise with itself'));
     return;
   }
-  if (typeof x !== 'object' && typeof x !== 'function') {
+  if ((typeof x !== 'object' && typeof x !== 'function') || x === null) {
     promise.__resolve(x);
     return;
   }
