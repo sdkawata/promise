@@ -23,11 +23,11 @@ myAdapter = {
     let promise = new MyPromise();
     return {
       promise: promise,
-      resolve: () => {
-        promise.__resolve();
+      resolve: (v) => {
+        promise.__resolve(v);
       },
-      reject: () => {
-        promise.__reject();
+      reject: (r) => {
+        promise.__reject(r);
       }
     }
   }
