@@ -1,5 +1,7 @@
 var promisesAplusTests = require("promises-aplus-tests");
+var MyPromise = require('./promise.js');
 
+console.log(MyPromise);
 defaultAdapter = {
   deferred: () => {
     let resolve;
@@ -14,8 +16,23 @@ defaultAdapter = {
       reject: reject
     }
   }
+};
+
+myAdapter = {
+  deferred: () => {
+    let promise = new MyPromise();
+    return {
+      promise: promise,
+      resolve: () => {
+        promise.__resolve();
+      },
+      reject: () => {
+        promise.__reject();
+      }
+    }
+  }
 }
 
-promisesAplusTests(defaultAdapter, function (err) {
+promisesAplusTests(myAdapter, function (err) {
   console.log('test ended ', err)
 });
