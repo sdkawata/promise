@@ -13,8 +13,8 @@ let MyPromise = function() {
 MyPromise.prototype.then = function then(onFullfilled, onRejected) {
   let promise2 = new MyPromise();
   this.__thenQueue.push({
-    onFullfilled: onFullfilled,
-    onRejected: onRejected,
+    onFullfilled,
+    onRejected,
     promise: promise2
   });
   if (this.__state !== PROMISE_PENDING) {
@@ -82,28 +82,28 @@ MyPromise.prototype.__handleThen = function() {
   const currentQueue = this.__thenQueue;
   this.__thenQueue = [];
   this.__handlerRegistered = false;
-  currentQueue.forEach((thenItem) => {
+  currentQueue.forEach(({promise, onFullfilled, onRejected}) => {
     if (this.__state === PROMISE_RESOLVED) {
-      if (typeof thenItem.onFullfilled === 'function') {
+      if (typeof onFullfilled === 'function') {
         try {
-          var x = thenItem.onFullfilled.call(undefined, this.__value);
-          MyPromise.resolvePromise(thenItem.promise, x);
+          var x = onFullfilled.call(undefined, this.__value);
+          MyPromise.resolvePromise(promise, x);
         } catch(e) {
-          thenItem.promise.__reject(e);
+          promise.__reject(e);
         }
       } else {
-        thenItem.promise.__resolve(this.__value);
+        promise.__resolve(this.__value);
       }
     } else if (this.__state === PROMISE_REJECTED) {
-      if (typeof thenItem.onRejected === 'function') {
+      if (typeof onRejected === 'function') {
         try {
-          var x = thenItem.onRejected.call(undefined, this.__reason);
-          MyPromise.resolvePromise(thenItem.promise, x);
+          var x = onRejected.call(undefined, this.__reason);
+          MyPromise.resolvePromise(promise, x);
         } catch(e) {
-          thenItem.promise.__reject(e);
+          promise.__reject(e);
         }
       } else {
-        thenItem.promise.__reject(this.__reason);
+        promise.__reject(this.__reason);
       }
     }
   })
