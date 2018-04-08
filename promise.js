@@ -16,7 +16,7 @@ class MyPromise {
   }
 
   then(onFullfilled, onRejected) {
-    let promise2 = new MyPromise();
+    let promise2 = new MyPromise(() => {});
     this.__thenQueue.push({
       onFullfilled,
       onRejected,
