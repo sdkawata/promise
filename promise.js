@@ -157,6 +157,11 @@ class MyPromise {
       reject(r);
     });
   }
+
+  static get [Symbol.species]() {
+    return this;
+  }
 }
+
 
 module.exports = MyPromise

@@ -32,6 +32,7 @@ let print = (f) => console.log();`;
   contents += fs.readFileSync('./test262/harness/doneprintHandle.js');
   contents += fs.readFileSync('./test262/harness/assert.js');
   contents += fs.readFileSync('./test262/harness/sta.js');
+  contents += fs.readFileSync('./test262/harness/propertyHelper.js');
   contents += fs.readFileSync(file);
   let tmpObj = tmp.fileSync();
   fs.writeFileSync(tmpObj.name, contents);
