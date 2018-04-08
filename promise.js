@@ -9,10 +9,17 @@ class MyPromise {
     this.__handlerRegistered = false;
     this.__value = null;
     this.__reason = null;
-    f(
-      (v) => {this.__resolve(v)},
-      (r) => {this.__reject(r)}
-    )
+    if (typeof f !== 'function') {
+      throw new TypeError('executor is not function');
+    }
+    try {
+      f(
+        (v) => {this.__resolve(v)},
+        (r) => {this.__reject(r)}
+      )
+    } catch (e) {
+      this.__reject(e);
+    }
   }
 
   then(onFullfilled, onRejected) {
