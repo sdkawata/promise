@@ -143,7 +143,7 @@ class MyPromise {
   
   static reject(r) {
     return new MyPromise((resolve, reject) => {
-      reject(r));
+      reject(r);
     });
   }
 }
