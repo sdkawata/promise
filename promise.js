@@ -27,6 +27,10 @@ class MyPromise {
     }
     return promise2;
   }
+  
+  catch(onRejected) {
+    return this.then(undefined, onRejected);
+  }
 
   __registerHandler() {
     if (this.__handlerRegistered || this.__thenQueue.length === 0) {
