@@ -3,12 +3,16 @@ const PROMISE_RESOLVED = 1;
 const PROMISE_REJECTED = 2;
 
 class MyPromise {
-  constructor() {
+  constructor(f) {
     this.__state = PROMISE_PENDING;
     this.__thenQueue = [];
     this.__handlerRegistered = false;
     this.__value = null;
     this.__reason = null;
+    f(
+      (v) => {this.__resolve(v)},
+      (r) => {this.__reject(r)}
+    )
   }
 
   then(onFullfilled, onRejected) {
@@ -129,6 +133,18 @@ class MyPromise {
     this.__state = PROMISE_REJECTED;
     this.__reason = reason;
     this.__registerHandler();
+  }
+
+  static resolve(v) {
+    return new MyPromise((resolve, reject) => {
+      resolve(v);
+    });
+  }
+  
+  static reject(r) {
+    return new MyPromise((resolve, reject) => {
+      reject(r));
+    });
   }
 }
 
