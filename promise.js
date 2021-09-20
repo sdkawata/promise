@@ -3,16 +3,27 @@ const PROMISE_RESOLVED = 1;
 const PROMISE_REJECTED = 2;
 
 class MyPromise {
-  constructor() {
+  constructor(f) {
     this.__state = PROMISE_PENDING;
     this.__thenQueue = [];
     this.__handlerRegistered = false;
     this.__value = null;
     this.__reason = null;
+    if (typeof f !== 'function') {
+      throw new TypeError('executor is not function');
+    }
+    try {
+      f(
+        (v) => {this.__resolve(v)},
+        (r) => {this.__reject(r)}
+      )
+    } catch (e) {
+      this.__reject(e);
+    }
   }
 
   then(onFullfilled, onRejected) {
-    let promise2 = new MyPromise();
+    let promise2 = new MyPromise(() => {});
     this.__thenQueue.push({
       onFullfilled,
       onRejected,
@@ -22,6 +33,10 @@ class MyPromise {
       this.__registerHandler();
     }
     return promise2;
+  }
+  
+  catch(onRejected) {
+    return this.then(undefined, onRejected);
   }
 
   __registerHandler() {
@@ -130,6 +145,23 @@ class MyPromise {
     this.__reason = reason;
     this.__registerHandler();
   }
+
+  static resolve(v) {
+    return new MyPromise((resolve, reject) => {
+      resolve(v);
+    });
+  }
+  
+  static reject(r) {
+    return new MyPromise((resolve, reject) => {
+      reject(r);
+    });
+  }
+
+  static get [Symbol.species]() {
+    return this;
+  }
 }
+
 
 module.exports = MyPromise

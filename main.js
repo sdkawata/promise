@@ -20,7 +20,7 @@ defaultAdapter = {
 
 myAdapter = {
   deferred: () => {
-    let promise = new MyPromise();
+    let promise = new MyPromise(() => {});
     return {
       promise: promise,
       resolve: (v) => {
