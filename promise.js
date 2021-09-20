@@ -2,133 +2,146 @@ const PROMISE_PENDING = 0;
 const PROMISE_RESOLVED = 1;
 const PROMISE_REJECTED = 2;
 
+const state = Symbol('state')
+const value = Symbol('value')
+const reason = Symbol('reason')
+const thenQueue = Symbol('thenQueue')
+const registerHandler = Symbol('registerHandler')
+const handlerRegistered = Symbol('handlerRegistered')
+const handleThen = Symbol('handleThen')
+const resolve = Symbol('resolve')
+const reject = Symbol('reject')
+
+//[[Promise]](promise, x)
+function resolvePromise(promise, x) {
+  if (promise === x) {
+    promise[reject].call(promise, new TypeError('trying to resolve promise with itself'));
+    return;
+  }
+  if ((typeof x !== 'object' && typeof x !== 'function') || x === null) {
+    promise[resolve].call(promise, x);
+    return;
+  }
+  let then; 
+  try {
+    then = x.then;
+  } catch(e) {
+    promise[reject].call(promise, e);
+  }
+  if (typeof then !== 'function') {
+    promise[resolve].call(promise, x);
+    return;
+  }
+  var functionCalled = false;
+  try {
+    then.call(
+      x,
+      (y) => {
+        // resolvePromise
+        if (functionCalled) {
+          return;
+        }
+        functionCalled = true;
+        resolvePromise(promise, y);
+      },
+      (r) => {
+        // rejectPromise
+        if (functionCalled) {
+          return;
+        }
+        functionCalled = true;
+        promise[reject].call(promise, r);
+      }
+    )
+  } catch(e) {
+    if (!functionCalled) {
+      promise[reject].call(promise, e);
+    }
+  }
+}
 class MyPromise {
-  constructor() {
-    this.__state = PROMISE_PENDING;
-    this.__thenQueue = [];
-    this.__handlerRegistered = false;
-    this.__value = null;
-    this.__reason = null;
+  constructor(f) {
+    this[state] = PROMISE_PENDING;
+    this[thenQueue] = [];
+    this[handlerRegistered] = false;
+    this[value] = null;
+    this[reason] = null;
+    if (typeof f === "function") {
+      f(this[resolve].bind(this), this[reject].bind(this))
+    }
   }
 
   then(onFullfilled, onRejected) {
     let promise2 = new MyPromise();
-    this.__thenQueue.push({
+    this[thenQueue].push({
       onFullfilled,
       onRejected,
       promise: promise2
     });
-    if (this.__state !== PROMISE_PENDING) {
-      this.__registerHandler();
+    if (this[state] !== PROMISE_PENDING) {
+      this[registerHandler].call(this);
     }
     return promise2;
   }
 
-  __registerHandler() {
-    if (this.__handlerRegistered || this.__thenQueue.length === 0) {
+ [registerHandler]() {
+    if (this[handlerRegistered] || this[thenQueue].length === 0) {
       return;
     }
-    this.__handlerRegistered = true;
+    this[handlerRegistered] = true;
     setTimeout(() => {
-      this.__handleThen();
+      this[handleThen].call(this);
     }, 0);
   }
 
-  //[[Promise]](promise, x)
-  static resolvePromise(promise, x) {
-    if (promise === x) {
-      promise.__reject(new TypeError('trying to resolve promise with itself'));
-      return;
-    }
-    if ((typeof x !== 'object' && typeof x !== 'function') || x === null) {
-      promise.__resolve(x);
-      return;
-    }
-    let then; 
-    try {
-      then = x.then;
-    } catch(e) {
-      promise.__reject(e);
-    }
-    if (typeof then !== 'function') {
-      promise.__resolve(x);
-      return;
-    }
-    var functionCalled = false;
-    try {
-      then.call(
-        x,
-        (y) => {
-          // resolvePromise
-          if (functionCalled) {
-            return;
-          }
-          functionCalled = true;
-          MyPromise.resolvePromise(promise, y);
-        },
-        (r) => {
-          // rejectPromise
-          if (functionCalled) {
-            return;
-          }
-          functionCalled = true;
-          promise.__reject(r);
-        }
-      )
-    } catch(e) {
-      if (!functionCalled) {
-        promise.__reject(e);
-      }
-    }
-  }
 
-  __handleThen() {
-    const currentQueue = this.__thenQueue;
-    this.__thenQueue = [];
-    this.__handlerRegistered = false;
+ [handleThen]() {
+    const currentQueue = this[thenQueue];
+    this[thenQueue] = [];
+    this[handlerRegistered] = false;
     currentQueue.forEach(({promise, onFullfilled, onRejected}) => {
-      if (this.__state === PROMISE_RESOLVED) {
+      if (this[state] === PROMISE_RESOLVED) {
         if (typeof onFullfilled === 'function') {
           try {
-            var x = onFullfilled.call(undefined, this.__value);
-            MyPromise.resolvePromise(promise, x);
+            var x = onFullfilled.call(undefined, this[value]);
+            resolvePromise(promise, x);
           } catch(e) {
-            promise.__reject(e);
+            promise[reject].call(promise, e);
           }
         } else {
-          promise.__resolve(this.__value);
+          promise[resolve].call(promise, this[value]);
         }
-      } else if (this.__state === PROMISE_REJECTED) {
+      } else if (this[state] === PROMISE_REJECTED) {
         if (typeof onRejected === 'function') {
           try {
-            var x = onRejected.call(undefined, this.__reason);
-            MyPromise.resolvePromise(promise, x);
+            var x = onRejected.call(undefined, this[reason]);
+            resolvePromise(promise, x);
           } catch(e) {
-            promise.__reject(e);
+            promise[reject].call(promise, e);
           }
         } else {
-          promise.__reject(this.__reason);
+          promise[reject].call(promise, this[reason]);
         }
       }
     })
   }
 
-  __resolve(value) {
-    if (this.__state !== PROMISE_PENDING) {
+ [resolve](v) {
+    if (this[state] !== PROMISE_PENDING) {
       return;
     }
-    this.__state = PROMISE_RESOLVED;
-    this.__value = value;
-    this.__registerHandler();
+    this[state] = PROMISE_RESOLVED;
+    this[value] = v;
+    this[registerHandler].call(this);
   }
 
-  __reject(reason) {
-    if (this.__state !== PROMISE_PENDING) {
+ [reject](r) {
+    if (this[state] !== PROMISE_PENDING) {
       return;
     }
-    this.__state = PROMISE_REJECTED;
-    this.__reason = reason;
-    this.__registerHandler();
+    this[state] = PROMISE_REJECTED;
+    this[reason] = r;
+    this[registerHandler].call(this);
   }
 }
 
